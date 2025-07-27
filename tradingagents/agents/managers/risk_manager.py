@@ -36,7 +36,7 @@ Deliverables:
 
 ---
 
-**Analysts Debate History:**  
+**Analysts Debate History:**
 {history}
 
 ---

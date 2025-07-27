@@ -19,15 +19,15 @@ def create_msg_delete():
     def delete_messages(state):
         """Clear messages and add placeholder for Anthropic compatibility"""
         messages = state["messages"]
-        
+
         # Remove all messages
         removal_operations = [RemoveMessage(id=m.id) for m in messages]
-        
+
         # Add a minimal placeholder message
         placeholder = HumanMessage(content="Continue")
-        
+
         return {"messages": removal_operations + [placeholder]}
-    
+
     return delete_messages
 
 
@@ -60,7 +60,7 @@ class Toolkit:
         Returns:
             str: A formatted dataframe containing the latest global news from Reddit in the specified time frame.
         """
-        
+
         global_news_result = interface.get_reddit_global_news(curr_date, 7, 5)
 
         return global_news_result

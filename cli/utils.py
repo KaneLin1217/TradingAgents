@@ -216,7 +216,7 @@ def select_deep_thinking_agent(provider) -> str:
             ("qwen3", "qwen3"),
         ]
     }
-    
+
     choice = questionary.select(
         "Select Your [Deep-Thinking LLM Engine]:",
         choices=[
@@ -247,9 +247,9 @@ def select_llm_provider() -> tuple[str, str]:
         ("Anthropic", "https://api.anthropic.com/"),
         ("Google", "https://generativelanguage.googleapis.com/v1"),
         ("Openrouter", "https://openrouter.ai/api/v1"),
-        ("Ollama", "http://localhost:11434/v1"),        
+        ("Ollama", "http://localhost:11434/v1"),
     ]
-    
+
     choice = questionary.select(
         "Select your LLM Provider:",
         choices=[
@@ -265,12 +265,12 @@ def select_llm_provider() -> tuple[str, str]:
             ]
         ),
     ).ask()
-    
+
     if choice is None:
         console.print("\n[red]no OpenAI backend selected. Exiting...[/red]")
         exit(1)
-    
+
     display_name, url = choice
     print(f"You selected: {display_name}\tURL: {url}")
-    
+
     return display_name, url

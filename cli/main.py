@@ -99,7 +99,7 @@ class MessageBuffer:
             if content is not None:
                 latest_section = section
                 latest_content = content
-               
+
         if latest_section and latest_content:
             # Format the current section for display
             section_titles = {
@@ -313,7 +313,7 @@ def update_display(layout, spinner_text=None):
             content_str = ' '.join(text_parts)
         elif not isinstance(content_str, str):
             content_str = str(content)
-            
+
         # Truncate message content if too long
         if len(content_str) > 200:
             content_str = content_str[:197] + "..."
@@ -470,7 +470,7 @@ def get_user_selections():
         )
     )
     selected_llm_provider, backend_url = select_llm_provider()
-    
+
     # Step 6: Thinking agents
     console.print(
         create_question_box(
@@ -767,7 +767,7 @@ def run_analysis():
             with open(log_file, "a") as f:
                 f.write(f"{timestamp} [{message_type}] {content}\n")
         return wrapper
-    
+
     def save_tool_call_decorator(obj, func_name):
         func = getattr(obj, func_name)
         @wraps(func)
@@ -857,7 +857,7 @@ def run_analysis():
                     msg_type = "System"
 
                 # Add message to buffer
-                message_buffer.add_message(msg_type, content)                
+                message_buffer.add_message(msg_type, content)
 
                 # If it's a tool call, add it to tool calls
                 if hasattr(last_message, "tool_calls"):

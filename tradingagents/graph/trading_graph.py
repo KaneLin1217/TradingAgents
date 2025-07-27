@@ -69,7 +69,7 @@ class TradingAgentsGraph:
             self.quick_thinking_llm = ChatGoogleGenerativeAI(model=self.config["quick_think_llm"])
         else:
             raise ValueError(f"Unsupported LLM provider: {self.config['llm_provider']}")
-        
+
         self.toolkit = Toolkit(config=self.config)
 
         # Initialize memories
