@@ -1,15 +1,26 @@
 import chromadb
 from chromadb.config import Settings
 from openai import OpenAI
+from sentence_transformers import SentenceTransformer
 
 
 class FinancialSituationMemory:
     def __init__(self, name, config):
-        if config["backend_url"] == "http://localhost:11434/v1":
-            self.embedding = "nomic-embed-text"
+        if config["llm_provider"].lower() == "deepseek":
+            self.embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
         else:
-            self.embedding = "text-embedding-3-small"
-        self.client = OpenAI(base_url=config["backend_url"])
+            if config["backend_url"] == "http://localhost:11434/v1":
+                self.embedding = "nomic-embed-text"
+            else:
+                self.embedding = "text-embedding-3-small"
+
+            if config["llm_provider"].lower() == "deepseek":
+                self.client = OpenAI(
+                    base_url=config["backend_url"],
+                )
+            else:
+                self.client = OpenAI()
+
         self.chroma_client = chromadb.Client(Settings(allow_reset=True))
         self.situation_collection = self.chroma_client.get_or_create_collection(
             name=name
@@ -18,10 +29,11 @@ class FinancialSituationMemory:
     def get_embedding(self, text):
         """Get OpenAI embedding for a text"""
 
-        response = self.client.embeddings.create(
-            model=self.embedding, input=text
-        )
-        return response.data[0].embedding
+        if hasattr(self, "embedding_model"):
+            return self.embedding_model.encode(text).tolist()
+        else:
+            response = self.client.embeddings.create(model=self.embedding, input=text)
+            return response.data[0].embedding
 
     def add_situations(self, situations_and_advice):
         """Add financial situations and their corresponding advice. Parameter is a list of tuples (situation, rec)"""

@@ -5,10 +5,11 @@ chromadb
 eodhd
 feedparser
 finnhub-python
+langchain-anthropic
+langchain-deepseek
 langchain-experimental
 langchain-google-genai
 langchain-openai
-langchain_anthropic
 langgraph
 pandas
 parsel
@@ -18,6 +19,7 @@ questionary
 redis
 requests
 rich
+sentence-transformers
 setuptools
 stockstats
 tqdm
