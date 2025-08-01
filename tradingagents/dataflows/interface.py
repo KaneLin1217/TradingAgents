@@ -24,6 +24,7 @@ finnhub_client = finnhub.Client(
 )
 
 sf.set_api_key(os.environ["SIMFIN_API_KEY"])
+sf.set_data_dir("/tmp/simfin_data/")
 
 def get_finnhub_news(
     ticker: Annotated[
@@ -47,25 +48,30 @@ def get_finnhub_news(
 
     start_date = datetime.strptime(curr_date, "%Y-%m-%d")
     before = start_date - relativedelta(days=look_back_days)
-    before = before.strftime("%Y-%m-%d")
+    before_str = before.strftime("%Y-%m-%d")
 
-    # result = get_data_in_range(ticker, before, curr_date, "news_data", DATA_DIR)
-    result = finnhub_client.company_news(ticker, _from=before, to=curr_date)
+    result = finnhub_client.company_news(ticker, _from=before_str, to=curr_date)
 
-    if len(result) == 0:
+    if not result:
         return ""
 
-    combined_result = ""
-    for day, data in result.items():
-        if len(data) == 0:
-            continue
-        for entry in data:
-            current_news = (
-                "### " + entry["headline"] + f" ({day})" + "\n" + entry["summary"]
-            )
-            combined_result += current_news + "\n\n"
+    news_entries = []
+    for entry in result:
+        timestamp = entry.get("datetime", 0)
+        if timestamp:
+            date_obj = datetime.fromtimestamp(timestamp)
+            date_str = date_obj.strftime("%Y-%m-%d")
+        else:
+            date_str = "Unknown Date"
+        
+        headline = entry.get("headline", "No headline")
+        summary = entry.get("summary", "No summary")
+        
+        news_entry = f"### {headline} ({date_str})\n{summary}"
+        news_entries.append(news_entry)
 
-    return f"## {ticker} News, from {before} to {curr_date}:\n" + str(combined_result)
+    combined_result = "\n\n".join(news_entries)
+    return f"## {ticker} News, from {before_str} to {curr_date}:\n{combined_result}"
 
 
 def get_finnhub_company_insider_sentiment(
@@ -85,29 +91,29 @@ def get_finnhub_company_insider_sentiment(
         str: a report of the sentiment in the past 15 days starting at curr_date
     """
 
-    date_obj = datetime.strptime(curr_date, "%Y-%m-%d")
-    before = date_obj - relativedelta(days=look_back_days)
-    before = before.strftime("%Y-%m-%d")
+    start_date = datetime.strptime(curr_date, "%Y-%m-%d")
+    before = start_date - relativedelta(days=look_back_days)
+    before_str = before.strftime("%Y-%m-%d")
 
-    # data = get_data_in_range(ticker, before, curr_date, "insider_senti", DATA_DIR)
-    data = finnhub_client.stock_insider_sentiment(ticker, before, curr_date)
+    data = finnhub_client.stock_insider_sentiment(ticker, before_str, curr_date)
 
-    if len(data) == 0:
+    if not data or 'data' not in data or len(data['data']) == 0:
         return ""
 
-    result_str = ""
-    seen_dicts = []
-    for date, senti_list in data.items():
-        for entry in senti_list:
-            if entry not in seen_dicts:
-                result_str += f"### {entry['year']}-{entry['month']}:\nChange: {entry['change']}\nMonthly Share Purchase Ratio: {entry['mspr']}\n\n"
-                seen_dicts.append(entry)
+    sentiment_entries = []
+    seen_entries = set()
+    for entry in data['data']:
+        entry_key = f"{entry['year']}-{entry['month']}"
+        if entry_key not in seen_entries:
+            change = entry.get('change', 'N/A')
+            mspr = entry.get('mspr', 'N/A')
+            
+            sentiment_entry = f"### {entry['year']}-{entry['month']}:\nChange: {change}\nMonthly Share Purchase Ratio: {mspr}"
+            sentiment_entries.append(sentiment_entry)
+            seen_entries.add(entry_key)
 
-    return (
-        f"## {ticker} Insider Sentiment Data for {before} to {curr_date}:\n"
-        + result_str
-        + "The change field refers to the net buying/selling from all insiders' transactions. The mspr field refers to monthly share purchase ratio."
-    )
+    combined_result = "\n\n".join(sentiment_entries)
+    return f"## {ticker} Insider Sentiment Data for {before_str} to {curr_date}:\n{combined_result}\n\nThe change field refers to the net buying/selling from all insiders' transactions. The mspr field refers to monthly share purchase ratio."
 
 
 def get_finnhub_company_insider_transactions(
@@ -127,24 +133,22 @@ def get_finnhub_company_insider_transactions(
         str: a report of the company's insider transaction/trading informtaion in the past 15 days
     """
 
-    date_obj = datetime.strptime(curr_date, "%Y-%m-%d")
-    before = date_obj - relativedelta(days=look_back_days)
-    before = before.strftime("%Y-%m-%d")
+    start_date = datetime.strptime(curr_date, "%Y-%m-%d")
+    before = start_date - relativedelta(days=look_back_days)
+    before_str = before.strftime("%Y-%m-%d")
 
-    # data = get_data_in_range(ticker, before, curr_date, "insider_trans", DATA_DIR)
-    data = finnhub_client.stock_insider_transactions(ticker, before, curr_date)
+    data = finnhub_client.stock_insider_transactions(ticker, before_str, curr_date)
 
-    if len(data) == 0:
+    if not data or 'data' not in data or len(data['data']) == 0:
         return ""
 
     result_str = ""
 
     seen_dicts = []
-    for date, senti_list in data.items():
-        for entry in senti_list:
-            if entry not in seen_dicts:
-                result_str += f"### Filing Date: {entry['filingDate']}, {entry['name']}:\nChange:{entry['change']}\nShares: {entry['share']}\nTransaction Price: {entry['transactionPrice']}\nTransaction Code: {entry['transactionCode']}\n\n"
-                seen_dicts.append(entry)
+    for entry in data['data']:
+        if entry not in seen_dicts:
+            result_str += f"### Filing Date: {entry['filingDate']}, {entry['name']}:\nChange:{entry['change']}\nShares: {entry['share']}\nTransaction Price: {entry['transactionPrice']}\nTransaction Code: {entry['transactionCode']}\n\n"
+            seen_dicts.append(entry)
 
     return (
         f"## {ticker} insider transactions from {before} to {curr_date}:\n"
@@ -161,17 +165,11 @@ def get_simfin_balance_sheet(
     ],
     curr_date: Annotated[str, "current date you are trading at, yyyy-mm-dd"],
 ):
-    data_path = os.path.join(
-        DATA_DIR,
-        "fundamental_data",
-        "simfin_data_all",
-        "balance_sheet",
-        "companies",
-        "us",
-        f"us-balance-{freq}.csv",
-    )
-    # df = pd.read_csv(data_path, sep=";")
+    
     df = sf.load_balance(variant=freq, market="us")
+
+    # Reset index to make Ticker and Report Date accessible as columns
+    df = df.reset_index()
 
     # Convert date strings to datetime objects and remove any time components
     df["Report Date"] = pd.to_datetime(df["Report Date"], utc=True).dt.normalize()
@@ -209,17 +207,10 @@ def get_simfin_cashflow(
     ],
     curr_date: Annotated[str, "current date you are trading at, yyyy-mm-dd"],
 ):
-    data_path = os.path.join(
-        DATA_DIR,
-        "fundamental_data",
-        "simfin_data_all",
-        "cash_flow",
-        "companies",
-        "us",
-        f"us-cashflow-{freq}.csv",
-    )
-    # df = pd.read_csv(data_path, sep=";")
     df = sf.load_cashflow(variant=freq, market="us")
+
+    # Reset index to make Ticker and Report Date accessible as columns
+    df = df.reset_index()
 
     # Convert date strings to datetime objects and remove any time components
     df["Report Date"] = pd.to_datetime(df["Report Date"], utc=True).dt.normalize()
@@ -257,17 +248,11 @@ def get_simfin_income_statements(
     ],
     curr_date: Annotated[str, "current date you are trading at, yyyy-mm-dd"],
 ):
-    data_path = os.path.join(
-        DATA_DIR,
-        "fundamental_data",
-        "simfin_data_all",
-        "income_statements",
-        "companies",
-        "us",
-        f"us-income-{freq}.csv",
-    )
     # df = pd.read_csv(data_path, sep=";")
     df = sf.load_income(variant=freq, market="us")
+
+    # Reset index to make Ticker and Report Date accessible as columns
+    df = df.reset_index()
 
     # Convert date strings to datetime objects and remove any time components
     df["Report Date"] = pd.to_datetime(df["Report Date"], utc=True).dt.normalize()
