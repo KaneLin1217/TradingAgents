@@ -1,30 +1,26 @@
-from typing import Annotated, Dict
-from .reddit_utils import fetch_top_from_category
-from .yfin_utils import *
-from .stockstats_utils import *
-from .googlenews_utils import *
-from .finnhub_utils import get_data_in_range
-from dateutil.relativedelta import relativedelta
-from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
-import json
 import os
-import pandas as pd
-from tqdm import tqdm
-import yfinance as yf
-from openai import OpenAI
-from .config import get_config, set_config, DATA_DIR
+from datetime import datetime
+from typing import Annotated
+
 import finnhub
-
+import pandas as pd
 import simfin as sf
+import yfinance as yf
+from dateutil.relativedelta import relativedelta
+from openai import OpenAI
 from simfin.names import *
+from tqdm import tqdm
 
-finnhub_client = finnhub.Client(
-    api_key = os.environ["FINNHUB_API_KEY"]
-)
+from .config import DATA_DIR, get_config
+from .googlenews_utils import getNewsData
+from .reddit_utils import fetch_top_from_category
+from .stockstats_utils import StockstatsUtils
+
+finnhub_client = finnhub.Client(api_key=os.environ["FINNHUB_API_KEY"])
 
 sf.set_api_key(os.environ["SIMFIN_API_KEY"])
 sf.set_data_dir("/tmp/simfin_data/")
+
 
 def get_finnhub_news(
     ticker: Annotated[
@@ -63,10 +59,10 @@ def get_finnhub_news(
             date_str = date_obj.strftime("%Y-%m-%d")
         else:
             date_str = "Unknown Date"
-        
+
         headline = entry.get("headline", "No headline")
         summary = entry.get("summary", "No summary")
-        
+
         news_entry = f"### {headline} ({date_str})\n{summary}"
         news_entries.append(news_entry)
 
@@ -97,17 +93,17 @@ def get_finnhub_company_insider_sentiment(
 
     data = finnhub_client.stock_insider_sentiment(ticker, before_str, curr_date)
 
-    if not data or 'data' not in data or len(data['data']) == 0:
+    if not data or "data" not in data or len(data["data"]) == 0:
         return ""
 
     sentiment_entries = []
     seen_entries = set()
-    for entry in data['data']:
+    for entry in data["data"]:
         entry_key = f"{entry['year']}-{entry['month']}"
         if entry_key not in seen_entries:
-            change = entry.get('change', 'N/A')
-            mspr = entry.get('mspr', 'N/A')
-            
+            change = entry.get("change", "N/A")
+            mspr = entry.get("mspr", "N/A")
+
             sentiment_entry = f"### {entry['year']}-{entry['month']}:\nChange: {change}\nMonthly Share Purchase Ratio: {mspr}"
             sentiment_entries.append(sentiment_entry)
             seen_entries.add(entry_key)
@@ -139,13 +135,13 @@ def get_finnhub_company_insider_transactions(
 
     data = finnhub_client.stock_insider_transactions(ticker, before_str, curr_date)
 
-    if not data or 'data' not in data or len(data['data']) == 0:
+    if not data or "data" not in data or len(data["data"]) == 0:
         return ""
 
     result_str = ""
 
     seen_dicts = []
-    for entry in data['data']:
+    for entry in data["data"]:
         if entry not in seen_dicts:
             result_str += f"### Filing Date: {entry['filingDate']}, {entry['name']}:\nChange:{entry['change']}\nShares: {entry['share']}\nTransaction Price: {entry['transactionPrice']}\nTransaction Code: {entry['transactionCode']}\n\n"
             seen_dicts.append(entry)
@@ -165,7 +161,6 @@ def get_simfin_balance_sheet(
     ],
     curr_date: Annotated[str, "current date you are trading at, yyyy-mm-dd"],
 ):
-    
     df = sf.load_balance(variant=freq, market="us")
 
     # Reset index to make Ticker and Report Date accessible as columns
@@ -428,7 +423,6 @@ def get_stock_stats_indicators_window(
     look_back_days: Annotated[int, "how many days to look back"],
     online: Annotated[bool, "to fetch data online or offline"],
 ) -> str:
-
     best_ind_params = {
         # Moving Averages
         "close_50_sma": (
@@ -563,7 +557,6 @@ def get_stockstats_indicator(
     ],
     online: Annotated[bool, "to fetch data online or offline"],
 ) -> str:
-
     curr_date = datetime.strptime(curr_date, "%Y-%m-%d")
     curr_date = curr_date.strftime("%Y-%m-%d")
 
@@ -630,7 +623,6 @@ def get_YFin_data_online(
     start_date: Annotated[str, "Start date in yyyy-mm-dd format"],
     end_date: Annotated[str, "End date in yyyy-mm-dd format"],
 ):
-
     datetime.strptime(start_date, "%Y-%m-%d")
     datetime.strptime(end_date, "%Y-%m-%d")
 
