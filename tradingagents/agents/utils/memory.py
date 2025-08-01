@@ -7,7 +7,7 @@ from sentence_transformers import SentenceTransformer
 class FinancialSituationMemory:
     def __init__(self, name, config):
         if config["llm_provider"].lower() == "deepseek":
-            self.embedding_model = SentenceTransformer("all-mpnet-base-v2")
+            self.embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
         else:
             if config["backend_url"] == "http://localhost:11434/v1":
                 self.embedding = "nomic-embed-text"
