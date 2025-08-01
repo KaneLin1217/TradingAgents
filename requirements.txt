@@ -21,6 +21,7 @@ requests
 rich
 sentence-transformers
 setuptools
+simfin
 stockstats
 tqdm
 tushare

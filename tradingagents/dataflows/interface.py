@@ -14,7 +14,16 @@ from tqdm import tqdm
 import yfinance as yf
 from openai import OpenAI
 from .config import get_config, set_config, DATA_DIR
+import finnhub
 
+import simfin as sf
+from simfin.names import *
+
+finnhub_client = finnhub.Client(
+    api_key = os.environ["FINNHUB_API_KEY"]
+)
+
+sf.set_api_key(os.environ["SIMFIN_API_KEY"])
 
 def get_finnhub_news(
     ticker: Annotated[
@@ -40,7 +49,8 @@ def get_finnhub_news(
     before = start_date - relativedelta(days=look_back_days)
     before = before.strftime("%Y-%m-%d")
 
-    result = get_data_in_range(ticker, before, curr_date, "news_data", DATA_DIR)
+    # result = get_data_in_range(ticker, before, curr_date, "news_data", DATA_DIR)
+    result = finnhub_client.company_news(ticker, _from=before, to=curr_date)
 
     if len(result) == 0:
         return ""
@@ -79,7 +89,8 @@ def get_finnhub_company_insider_sentiment(
     before = date_obj - relativedelta(days=look_back_days)
     before = before.strftime("%Y-%m-%d")
 
-    data = get_data_in_range(ticker, before, curr_date, "insider_senti", DATA_DIR)
+    # data = get_data_in_range(ticker, before, curr_date, "insider_senti", DATA_DIR)
+    data = finnhub_client.stock_insider_sentiment(ticker, before, curr_date)
 
     if len(data) == 0:
         return ""
@@ -120,7 +131,8 @@ def get_finnhub_company_insider_transactions(
     before = date_obj - relativedelta(days=look_back_days)
     before = before.strftime("%Y-%m-%d")
 
-    data = get_data_in_range(ticker, before, curr_date, "insider_trans", DATA_DIR)
+    # data = get_data_in_range(ticker, before, curr_date, "insider_trans", DATA_DIR)
+    data = finnhub_client.stock_insider_transactions(ticker, before, curr_date)
 
     if len(data) == 0:
         return ""
@@ -158,7 +170,8 @@ def get_simfin_balance_sheet(
         "us",
         f"us-balance-{freq}.csv",
     )
-    df = pd.read_csv(data_path, sep=";")
+    # df = pd.read_csv(data_path, sep=";")
+    df = sf.load_balance(variant=freq, market="us")
 
     # Convert date strings to datetime objects and remove any time components
     df["Report Date"] = pd.to_datetime(df["Report Date"], utc=True).dt.normalize()
@@ -205,7 +218,8 @@ def get_simfin_cashflow(
         "us",
         f"us-cashflow-{freq}.csv",
     )
-    df = pd.read_csv(data_path, sep=";")
+    # df = pd.read_csv(data_path, sep=";")
+    df = sf.load_cashflow(variant=freq, market="us")
 
     # Convert date strings to datetime objects and remove any time components
     df["Report Date"] = pd.to_datetime(df["Report Date"], utc=True).dt.normalize()
@@ -252,7 +266,8 @@ def get_simfin_income_statements(
         "us",
         f"us-income-{freq}.csv",
     )
-    df = pd.read_csv(data_path, sep=";")
+    # df = pd.read_csv(data_path, sep=";")
+    df = sf.load_income(variant=freq, market="us")
 
     # Convert date strings to datetime objects and remove any time components
     df["Report Date"] = pd.to_datetime(df["Report Date"], utc=True).dt.normalize()
