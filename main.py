@@ -48,7 +48,9 @@ config["online_tools"] = True  # Increase debate rounds
 args = parse_arguments()
 
 # Initialize with custom config
-ta = TradingAgentsGraph(debug=True, config=config)
+ta = TradingAgentsGraph(
+    debug=True, config=config, selected_analysts=["market", "news", "fundamentals"]
+)
 
 # forward propagate
 print(f"Analyzing {args.ticker} for date {args.date}")
