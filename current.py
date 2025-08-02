@@ -26,19 +26,12 @@ def main():
 
     quote_msg = f"""
 Current price: ${quote.get("c", 0):.2f}
-
 Change: ${quote.get("d", 0):.2f}
-
 Percent change: {quote.get("dp", 0):.2f}%
-
 High price of the day: ${quote.get("h", 0):.2f}
-
 Low price of the day: ${quote.get("l", 0):.2f}
-
 Open price of the day: ${quote.get("o", 0):.2f}
-
 Previous close price: ${quote.get("pc", 0):.2f}
-
 """
 
     print(quote_msg)

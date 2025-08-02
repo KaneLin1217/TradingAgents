@@ -234,19 +234,12 @@ def get_trading_decision(ticker, date, current_price=None, position_info=None):
 
         quote_msg = f"""
 Current price: ${current_price:.2f}
-
 Change: ${quote.get("d", 0):.2f}
-
 Percent change: {quote.get("dp", 0):.2f}%
-
 High price of the day: ${quote.get("h", 0):.2f}
-
 Low price of the day: ${quote.get("l", 0):.2f}
-
 Open price of the day: ${quote.get("o", 0):.2f}
-
 Previous close price: ${quote.get("pc", 0):.2f}
-
 """
     except Exception as e:
         print(f"Error fetching market data: {e}")
