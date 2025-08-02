@@ -22,6 +22,39 @@ sf.set_api_key(os.environ["SIMFIN_API_KEY"])
 sf.set_data_dir("/tmp/simfin_data/")
 
 
+def get_finnhub_market_news():
+    """
+    Retrieve news about a general market
+
+    Returns
+        str: dataframe containing the news of the market
+
+    """
+
+    result = finnhub_client.general_news("general", min_id=0)
+
+    if not result:
+        return ""
+
+    news_entries = []
+    for entry in result:
+        timestamp = entry.get("datetime", 0)
+        if timestamp:
+            date_obj = datetime.fromtimestamp(timestamp)
+            date_str = date_obj.strftime("%Y-%m-%d")
+        else:
+            date_str = "Unknown Date"
+
+        headline = entry.get("headline", "No headline")
+        summary = entry.get("summary", "No summary")
+
+        news_entry = f"### {headline} ({date_str})\n{summary}"
+        news_entries.append(news_entry)
+
+    combined_result = "\n\n".join(news_entries)
+    return f"## General Market News:\n{combined_result}"
+
+
 def get_finnhub_news(
     ticker: Annotated[
         str,
