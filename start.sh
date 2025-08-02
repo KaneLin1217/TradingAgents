@@ -1,5 +1,5 @@
 #!/bin/bash
-source env/bin/activate
+source .venv/bin/activate
 set -a
 source .env
 set +a
