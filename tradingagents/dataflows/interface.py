@@ -1,5 +1,4 @@
 import os
-import time
 from datetime import datetime
 from typing import Annotated
 
@@ -549,9 +548,6 @@ def get_stock_stats_indicators_window(
         ind_string += f"{curr_date.strftime('%Y-%m-%d')}: {indicator_value}\n"
 
         curr_date = curr_date - relativedelta(days=1)
-        
-        # Add sleep interval to avoid rate limiting when fetching data online
-        time.sleep(5)  # Sleep for 1 second between requests
 
     result_str = (
         f"## {indicator} values from {before.strftime('%Y-%m-%d')} to {end_date}:\n\n"
