@@ -539,42 +539,19 @@ def get_stock_stats_indicators_window(
     curr_date = datetime.strptime(curr_date, "%Y-%m-%d")
     before = curr_date - relativedelta(days=look_back_days)
 
-    if not online:
-        # read from YFin data
-        data = pd.read_csv(
-            os.path.join(
-                DATA_DIR,
-                f"market_data/price_data/{symbol}-YFin-data-2015-01-01-2025-03-25.csv",
-            )
+    # online gathering
+    ind_string = ""
+    while curr_date >= before:
+        indicator_value = get_stockstats_indicator(
+            symbol, indicator, curr_date.strftime("%Y-%m-%d")
         )
-        data["Date"] = pd.to_datetime(data["Date"], utc=True)
-        dates_in_df = data["Date"].astype(str).str[:10]
 
-        ind_string = ""
-        while curr_date >= before:
-            # only do the trading dates
-            if curr_date.strftime("%Y-%m-%d") in dates_in_df.values:
-                indicator_value = get_stockstats_indicator(
-                    symbol, indicator, curr_date.strftime("%Y-%m-%d"), online
-                )
+        ind_string += f"{curr_date.strftime('%Y-%m-%d')}: {indicator_value}\n"
 
-                ind_string += f"{curr_date.strftime('%Y-%m-%d')}: {indicator_value}\n"
-
-            curr_date = curr_date - relativedelta(days=1)
-    else:
-        # online gathering
-        ind_string = ""
-        while curr_date >= before:
-            indicator_value = get_stockstats_indicator(
-                symbol, indicator, curr_date.strftime("%Y-%m-%d"), online
-            )
-
-            ind_string += f"{curr_date.strftime('%Y-%m-%d')}: {indicator_value}\n"
-
-            curr_date = curr_date - relativedelta(days=1)
-            
-            # Add sleep interval to avoid rate limiting when fetching data online
-            time.sleep(5)  # Sleep for 1 second between requests
+        curr_date = curr_date - relativedelta(days=1)
+        
+        # Add sleep interval to avoid rate limiting when fetching data online
+        time.sleep(5)  # Sleep for 1 second between requests
 
     result_str = (
         f"## {indicator} values from {before.strftime('%Y-%m-%d')} to {end_date}:\n\n"
@@ -592,7 +569,6 @@ def get_stockstats_indicator(
     curr_date: Annotated[
         str, "The current trading date you are trading on, YYYY-mm-dd"
     ],
-    online: Annotated[bool, "to fetch data online or offline"],
 ) -> str:
     curr_date = datetime.strptime(curr_date, "%Y-%m-%d")
     curr_date = curr_date.strftime("%Y-%m-%d")
@@ -603,7 +579,6 @@ def get_stockstats_indicator(
             indicator,
             curr_date,
             os.path.join(DATA_DIR, "market_data", "price_data"),
-            online=online,
         )
     except Exception as e:
         print(
