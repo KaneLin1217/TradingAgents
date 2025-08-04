@@ -245,6 +245,54 @@ Previous close price: ${quote.get("pc", 0):.2f}
         print(f"Error fetching market data: {e}")
         quote_msg = f"Ticker: {ticker}\nCurrent price: ${current_price:.2f if current_price else 0:.2f}\n"
 
+    
+    result = finnhub_client.company_news(ticker, _from=date, to=date)
+
+    if not result:
+        return ""
+
+    news_entries = []
+    for entry in result:
+        timestamp = entry.get("datetime", 0)
+        if timestamp:
+            date_obj = datetime.fromtimestamp(timestamp)
+            date_str = date_obj.strftime("%Y-%m-%d")
+        else:
+            date_str = "Unknown Date"
+
+        headline = entry.get("headline", "No headline")
+        summary = entry.get("summary", "No summary")
+
+        news_entry = f"### {headline} ({date_str})\n{summary}"
+        news_entries.append(news_entry)
+
+    combined_result = "\n\n".join(news_entries)
+    company_news = f"## {ticker} News today:\n{combined_result}"
+    
+    result = finnhub_client.general_news("general", min_id=0)
+
+    if not result:
+        return ""
+
+    news_entries = []
+    for entry in result:
+        timestamp = entry.get("datetime", 0)
+        if timestamp:
+            date_obj = datetime.fromtimestamp(timestamp)
+            date_str = date_obj.strftime("%Y-%m-%d")
+        else:
+            date_str = "Unknown Date"
+
+        headline = entry.get("headline", "No headline")
+        summary = entry.get("summary", "No summary")
+
+        news_entry = f"### {headline} ({date_str})\n{summary}"
+        news_entries.append(news_entry)
+
+    combined_result = "\n\n".join(news_entries)
+    market_news = f"## General Market News:\n{combined_result}"
+
+
     # Initialize LLM
     llm = ChatDeepSeek(model="deepseek-reasoner")
 
@@ -288,6 +336,8 @@ No current position
     real_time_data = f"""
 ```markdown
 {quote_msg}
+{company_news}
+{market_news}
 ```
 """
 
